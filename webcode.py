@@ -143,3 +143,7 @@ def logout():
     session.pop('user_id', None)
     session.pop('role', None)
     return redirect(url_for('user'))
+
+if __name__ == '__main__':
+    print("🚀 Starting Flask server...")
+    app.run(debug=True, host='127.0.0.1', port=5000)
