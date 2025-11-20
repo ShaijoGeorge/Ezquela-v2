@@ -151,6 +151,19 @@ def admin_home():
         return redirect(url_for('index'))
     return render_template('admin/base.html')
 
+@app.route('/teacher_home')
+@login_required
+def teacher_home():
+    if session.get('role') != "teacher":
+        return redirect(url_for('index'))
+    return render_template('teacher/base.html')
+
+@app.route('/student_home')
+@login_required
+def student_home():
+    if session.get('role') != "student":
+        return redirect(url_for('index'))
+    return render_template('student/base.html')
 
 if __name__ == '__main__':
     print("🚀 Starting Flask server...")
