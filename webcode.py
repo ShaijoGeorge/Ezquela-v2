@@ -144,6 +144,14 @@ def logout():
     session.pop('role', None)
     return redirect(url_for('user'))
 
+@app.route('/admin_home')
+@login_required
+def admin_home():
+    if session.get('role') != "admin":
+        return redirect(url_for('index'))
+    return render_template('admin/base.html')
+
+
 if __name__ == '__main__':
     print("🚀 Starting Flask server...")
     app.run(debug=True, host='127.0.0.1', port=5000)
