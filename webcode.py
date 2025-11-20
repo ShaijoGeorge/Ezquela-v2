@@ -70,3 +70,76 @@ def get_current_user():
     with db.cursor() as cursor:
         cursor.execute("SELECT id, username, email, role, is_active FROM users WHERE id = %s", (uid,))
         return cursor.fetchone()
+    
+@app.route('/')
+def index():
+    if 'user_id' in session:
+        role = get_user_role(session['user_id'])
+        if role == "admin":
+            return redirect(url_for('admin_home'))
+        elif role == "teacher":
+            return redirect(url_for('teacher_home'))
+        elif role == "student":
+            return redirect(url_for('student_home'))
+    return redirect(url_for('user'))
+
+
+@app.route('/login', methods=["GET", "POST"])
+def user():
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+
+    if request.method == "POST":
+        username = request.form.get('textfield', '').strip()
+        password = request.form.get('textfield2', '')
+
+        if not username or not password:
+            flash("Username and password required", "danger")
+            return redirect(url_for('user'))
+
+        db = get_db()
+        with db.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, username, password_hash, role, is_active "
+                "FROM users WHERE username = %s",
+                (username,)
+            )
+            user_row = cursor.fetchone()
+
+        if not user_row:
+            flash("Invalid username or password", "danger")
+            return redirect(url_for('user'))
+
+        if not user_row['is_active']:
+            flash("Account is disabled. Contact administrator.", "warning")
+            return redirect(url_for('user'))
+
+        if not check_password_hash(user_row['password_hash'], password):
+            flash("Invalid username or password", "danger")
+            return redirect(url_for('user'))
+
+        # Login OK
+        session['user_id'] = user_row['id']
+        session['role'] = user_row['role']
+
+        if user_row['role'] == "admin":
+            return redirect(url_for('admin_home'))
+        elif user_row['role'] == "teacher":
+            return redirect(url_for('teacher_home'))
+        elif user_row['role'] == "student":
+            return redirect(url_for('student_home'))
+
+        return redirect(url_for('index'))
+
+    response = make_response(render_template('login.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Expires'] = 0
+    response.headers['Pragma'] = 'no-cache'
+    return response
+
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('role', None)
+    return redirect(url_for('user'))
